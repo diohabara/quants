@@ -1,0 +1,16 @@
+[package]
+name = "quants"
+version = "0.1.0"
+edition = "2021"
+authors = ["Takemaru Kadoi"]
+description = "A project for financial quant analysis using Rust."
+license = "Apache-2.0"
+repository = "https://github.com/diohabara/quants"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ndarray = "0.16.0"
+num = "0.4.3"
+rand = "0.8.5"
