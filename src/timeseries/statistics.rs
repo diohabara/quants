@@ -1,38 +1,58 @@
 use ndarray::Array1;
 use num::traits::ToPrimitive;
 
-/// Compute the mean of a generic series.
-pub fn mean<T>(series: &Array1<T>) -> Option<f64>
+pub fn mean<T>(series: &Array1<T>, is_sample: bool) -> Option<f64>
 where
     T: ToPrimitive + Clone,
 {
     let sum: f64 = series.iter().cloned().map(|x| x.to_f64().unwrap()).sum();
-    let len = series.len() as f64;
-    if len == 0.0 {
+    let len = series.len();
+    if len == 0 {
         None
     } else {
-        Some(sum / len)
+        if is_sample {
+            Some(sum / (len - 1) as f64)
+        } else {
+            Some(sum / len as f64)
+        }
     }
 }
 
-/// Compute the standard deviation of a generic series.
-pub fn standard_deviation<T>(array: &Array1<T>) -> Option<f64>
+pub fn variance<T>(series: &Array1<T>, is_sample: bool) -> Option<f64>
 where
-    T: num::traits::ToPrimitive + Clone,
+    T: ToPrimitive + Clone,
 {
-    let mean_value = mean(array)?;
-    let variance: f64 = array
+    let mean_value = mean(series, is_sample)?;
+    let variance: f64 = series
         .iter()
         .map(|x| {
             let x_f64 = x.to_f64().unwrap();
             (x_f64 - mean_value).powi(2)
         })
         .sum();
-    let len = array.len() as f64;
-    if len == 0.0 || len == 1.0 {
-        None
+    let len = series.len();
+    if is_sample {
+        if len == 0 || len == 1 {
+            None
+        } else {
+            Some(variance / (len - 1) as f64)
+        }
     } else {
-        Some((variance / (len - 1.0)).sqrt())
+        if len == 0 {
+            None
+        } else {
+            Some(variance / len as f64)
+        }
+    }
+}
+
+pub fn standard_deviation<T>(series: &Array1<T>, is_sample: bool) -> Option<f64>
+where
+    T: num::traits::ToPrimitive + Clone,
+{
+    match variance(series, is_sample) {
+        Some(variance) => Some(variance.sqrt()),
+        None => None,
     }
 }
 
@@ -43,30 +63,41 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_mean_f64() {
-        let series = from_vec(vec![1.0, 2.0, 3.0]);
-        let mean = mean(&series);
-        assert_eq!(mean, Some(2.0));
+    fn test_population_mean() {
+        let series = from_vec(vec![
+            128, 219, 316, 189, 512, 98, 155, 110, 468, 177, 203, 73, 252,
+        ]);
+        let mean = mean(&series, false);
+        if let Some(mean) = mean {
+            assert_eq!(mean - 223.0769 < 0.0001, true);
+        } else {
+            panic!("Mean calculation failed.");
+        }
     }
 
     #[test]
-    fn test_standard_deviation_f64() {
-        let series = from_vec(vec![1.0, 2.0, 3.0]);
-        let std_dev = standard_deviation(&series);
-        assert_eq!(std_dev, Some(1.0));
+    fn test_population_variance() {
+        let series = from_vec(vec![
+            128, 219, 316, 189, 512, 98, 155, 110, 468, 177, 203, 73, 252,
+        ]);
+        let var = variance(&series, false);
+        if let Some(var) = var {
+            assert_eq!(var - 17020.5325 < 0.0001, true);
+        } else {
+            panic!("Variance calculation failed.");
+        }
     }
 
     #[test]
-    fn test_mean_i32() {
-        let series = from_vec(vec![1, 2, 3]);
-        let mean = mean(&series);
-        assert_eq!(mean, Some(2.0));
-    }
-
-    #[test]
-    fn test_standard_deviation_i32() {
-        let series = from_vec(vec![1, 2, 3]);
-        let std_dev = standard_deviation(&series);
-        assert_eq!(std_dev, Some(1.0));
+    fn test_population_std() {
+        let series = from_vec(vec![
+            128, 219, 316, 189, 512, 98, 155, 110, 468, 177, 203, 73, 252,
+        ]);
+        let std = standard_deviation(&series, false);
+        if let Some(std) = std {
+            assert_eq!(std - 130.4627 < 0.0001, true);
+        } else {
+            panic!("Standard deviation calculation failed.");
+        }
     }
 }
